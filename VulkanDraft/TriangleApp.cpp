@@ -3,6 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
+#include <vector>
 
 
 void TriangleApp::run()
@@ -17,8 +18,7 @@ void TriangleApp::initWindow()
 {
 	if (!glfwInit())
 	{
-		std::cout << "Could not initialise GLFW window" << std::endl;
-		return;
+		throw std::runtime_error("Failed to create GLFW window!");
 	}
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -29,6 +29,7 @@ void TriangleApp::initWindow()
 
 void TriangleApp::initVulkan()
 {
+	createInstance();
 }
 
 void TriangleApp::mainLoop()
@@ -41,6 +42,49 @@ void TriangleApp::mainLoop()
 
 void TriangleApp::cleanup()
 {
+	vkDestroyInstance(m_Instance, nullptr);
+
 	glfwDestroyWindow(m_Window);
 	glfwTerminate();
+}
+
+void TriangleApp::createInstance()
+{
+	VkApplicationInfo appInfo{};
+	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	appInfo.pApplicationName = "Hello Triangle";
+	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+	appInfo.pEngineName = "No Engine";
+	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+	appInfo.apiVersion = VK_API_VERSION_1_0;
+
+	uint32_t glfwExtensionCount = 0;
+	const char** glfwExtensions;
+	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+
+	VkInstanceCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+	createInfo.pApplicationInfo = &appInfo;
+	createInfo.enabledExtensionCount = glfwExtensionCount;
+	createInfo.ppEnabledExtensionNames = glfwExtensions;
+	createInfo.enabledLayerCount = 0;
+
+	if (vkCreateInstance(&createInfo, nullptr, &m_Instance) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("Failed to create instance!");
+	}
+
+	uint32_t extensionCount = 0;
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+	std::vector<VkExtensionProperties> extensions(extensionCount);
+
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+
+	std::cout << "Available Vulkan extensions:\n";
+
+	for (const auto& extension : extensions) 
+	{
+		std::cout << '\t' << extension.extensionName << '\n';
+	}
 }
