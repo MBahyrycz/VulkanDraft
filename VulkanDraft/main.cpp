@@ -16,5 +16,6 @@ int main() {
         return EXIT_FAILURE;
     }
 
+    std::cin.get();
     return EXIT_SUCCESS;
 }
