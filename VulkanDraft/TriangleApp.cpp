@@ -53,6 +53,7 @@ void TriangleApp::initVulkan()
 	createInstance();
 	setupDebugMessenger();
 	pickPhysicalDevice();
+	createLogicalDevice();
 }
 
 void TriangleApp::mainLoop()
@@ -65,6 +66,7 @@ void TriangleApp::mainLoop()
 
 void TriangleApp::cleanup()
 {
+	vkDestroyDevice(m_Device, nullptr);
 	if (enableValidationLayers)
 	{
 		DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
@@ -237,6 +239,45 @@ QueueFamilyIndices TriangleApp::findQueueFamilies(VkPhysicalDevice device)
 	}
 
 	return indices;
+}
+
+void TriangleApp::createLogicalDevice()
+{
+	QueueFamilyIndices indices = findQueueFamilies(m_PhysicalDevice);
+
+	float queuePriority = 1.0f;
+
+	VkDeviceQueueCreateInfo queueCreateInfo{};
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+	queueCreateInfo.queueCount = 1;
+	queueCreateInfo.pQueuePriorities = &queuePriority;
+
+	VkPhysicalDeviceFeatures deviceFeatures{};
+
+	VkDeviceCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	createInfo.pQueueCreateInfos = &queueCreateInfo;
+	createInfo.queueCreateInfoCount = 1;
+	createInfo.pEnabledFeatures = &deviceFeatures;
+	createInfo.enabledExtensionCount = 0;
+
+	if (enableValidationLayers)
+	{
+		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+		createInfo.ppEnabledLayerNames = validationLayers.data();
+	}
+	else
+	{
+		createInfo.enabledLayerCount = 0;
+	}
+
+	if (vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_Device) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create logical device!");
+	}
+
+	vkGetDeviceQueue(m_Device, indices.graphicsFamily.value(), 0, &m_GraphicQueue);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
