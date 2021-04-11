@@ -2,12 +2,30 @@
 
 #include <algorithm> // Necessary for std::min/std::max
 #include <iostream>
+#include <fstream>
 #include <stdexcept>
 #include <cstdlib>
 #include <set>
 #include <cstdint> // Necessary for UINT32_MAX
 
+static std::vector<char> readFile(const std::string& filename)
+{
+	std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
+	if (!file.is_open())
+	{
+		throw std::runtime_error("Failed to open file!");
+	}
+
+	size_t fileSize = (size_t)file.tellg();
+	std::vector<char> buffer(fileSize);
+
+	file.seekg(0);
+	file.read(buffer.data(), fileSize);
+	file.close();
+
+	return buffer;
+}
 
 static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) 
 {
@@ -61,6 +79,7 @@ void TriangleApp::initVulkan()
 	createLogicalDevice();
 	createSwapChain();
 	createImageViews();
+	createGraphicPipeline();
 }
 
 void TriangleApp::mainLoop()
@@ -460,6 +479,50 @@ void TriangleApp::createImageViews()
 			throw std::runtime_error("Failed to create image views!");
 		}
 	}
+}
+
+void TriangleApp::createGraphicPipeline()
+{
+	auto vertShaderCode = readFile("shaders/vert.spv");
+	auto fragShaderCode = readFile("shaders/frag.spv");
+
+	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+
+	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vertShaderStageInfo.module = vertShaderModule;
+	vertShaderStageInfo.pName = "main";
+
+	VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragShaderStageInfo.module = fragShaderModule;
+	fragShaderStageInfo.pName = "main";
+
+
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+
+
+	vkDestroyShaderModule(m_Device, fragShaderModule, nullptr);
+	vkDestroyShaderModule(m_Device, vertShaderModule, nullptr);
+}
+
+VkShaderModule TriangleApp::createShaderModule(const std::vector<char>& code)
+{
+	VkShaderModuleCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createInfo.codeSize = code.size();
+	createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+	VkShaderModule shaderModule;
+	if (vkCreateShaderModule(m_Device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create shader module!");
+	}
+
+	return shaderModule;
 }
 
 VkSurfaceFormatKHR TriangleApp::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)

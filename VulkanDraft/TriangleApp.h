@@ -67,7 +67,9 @@ private:
 	void createSurface();
 	void createSwapChain();
 	void createImageViews();
-
+	void createGraphicPipeline();
+	
+	VkShaderModule createShaderModule(const std::vector<char>& code);
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
