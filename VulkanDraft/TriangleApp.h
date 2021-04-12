@@ -47,6 +47,7 @@ class  TriangleApp
 {
 public:
 	void run();
+	void drawFrame();
 private:
 	void initWindow();
 	void initVulkan();
@@ -69,6 +70,10 @@ private:
 	void createImageViews();
 	void createRenderPass();
 	void createGraphicPipeline();
+	void createFramebuffers();
+	void createCommandPool();
+	void createCommandBuffers();
+	void createSemaphores();
 	
 	VkShaderModule createShaderModule(const std::vector<char>& code);
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -93,4 +98,9 @@ private:
 	VkRenderPass m_RenderPass;
 	VkPipelineLayout m_PipelineLayout;
 	VkPipeline m_GraphicsPipeline;
+	std::vector<VkFramebuffer> m_SwapChainFramebuffers;
+	VkCommandPool m_CommandPool;
+	std::vector<VkCommandBuffer> m_CommandBuffers;
+	VkSemaphore m_ImageAvailableSemaphore;
+	VkSemaphore m_RendererFinishedSemaphore;
 };
