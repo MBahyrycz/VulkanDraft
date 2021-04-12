@@ -5,3 +5,8 @@ Engine project can be found in here: [BIGOS](https://github.com/3MGit/BIGOS)
 ## Getting Started
 Instal Vulkan SDK in default directory: C:\VulkanSDK. 
 Probably you will need to change version in Visual Studio Solution project properties. 
+
+## Fresh demo
+<p align="center">
+  <img src="https://github.com/MBahyrycz/VulkanDraft/blob/main/Demos/HelloTriangle.png" />
+</p>
