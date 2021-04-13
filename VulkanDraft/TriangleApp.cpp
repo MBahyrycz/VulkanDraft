@@ -62,7 +62,17 @@ void TriangleApp::drawFrame()
 	vkWaitForFences(m_Device, 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
 
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR(m_Device, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(m_Device, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE, &imageIndex);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		recreateSwapChain();
+		return;
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	{
+		throw std::runtime_error("Failed to acquire swap chain image!");
+	}
 
 	// Check if a previous frame is using this image (i.e. there is its fence to wait on)
 	if (m_ImagesInFlight[imageIndex] != VK_NULL_HANDLE)
@@ -105,7 +115,18 @@ void TriangleApp::drawFrame()
 	presentInfo.pImageIndices = &imageIndex;
 	presentInfo.pResults = nullptr;
 
-	vkQueuePresentKHR(m_PresentQueue, &presentInfo);
+	result = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_FramebufferResized)
+	{
+		recreateSwapChain();
+		m_FramebufferResized = false;
+	}
+	else if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to present swap chain image!");
+	}
+
 	//vkQueueWaitIdle(m_PresentQueue);
 
 	m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -119,10 +140,12 @@ void TriangleApp::initWindow()
 	}
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
 	m_Window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+	glfwSetWindowUserPointer(m_Window, this);
+	glfwSetFramebufferSizeCallback(m_Window, framebufferResizeCallback);
 }
+
 
 void TriangleApp::initVulkan()
 {
@@ -152,8 +175,31 @@ void TriangleApp::mainLoop()
 	vkDeviceWaitIdle(m_Device);
 }
 
+
+void TriangleApp::cleanupSwapChain()
+{
+	for (auto framebuffer : m_SwapChainFramebuffers)
+	{
+		vkDestroyFramebuffer(m_Device, framebuffer, nullptr);
+	}
+	vkFreeCommandBuffers(m_Device, m_CommandPool, static_cast<uint32_t>(m_CommandBuffers.size()), m_CommandBuffers.data());
+
+	vkDestroyPipeline(m_Device, m_GraphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
+	vkDestroyRenderPass(m_Device, m_RenderPass, nullptr);
+
+	for (auto imageView : m_SwapChainImageViews)
+	{
+		vkDestroyImageView(m_Device, imageView, nullptr);
+	}
+
+	vkDestroySwapchainKHR(m_Device, m_SwapChain, nullptr);
+}
+
 void TriangleApp::cleanup()
 {
+	cleanupSwapChain();
+
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		vkDestroySemaphore(m_Device, m_RendererFinishedSemaphores[i], nullptr);
@@ -161,19 +207,6 @@ void TriangleApp::cleanup()
 		vkDestroyFence(m_Device, m_InFlightFences[i], nullptr);
 	}
 	vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
-	for (auto framebuffer : m_SwapChainFramebuffers)
-	{
-		vkDestroyFramebuffer(m_Device, framebuffer, nullptr);
-	}
-	vkDestroyPipeline(m_Device, m_GraphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
-	vkDestroyRenderPass(m_Device, m_RenderPass, nullptr);
-	for (auto imageView : m_SwapChainImageViews)
-	{
-		vkDestroyImageView(m_Device, imageView, nullptr);
-	}
-
-	vkDestroySwapchainKHR(m_Device, m_SwapChain, nullptr);
 	vkDestroyDevice(m_Device, nullptr);
 	if (enableValidationLayers)
 	{
@@ -854,6 +887,28 @@ void TriangleApp::createSyncObjects()
 	}
 }
 
+void TriangleApp::recreateSwapChain()
+{
+	int width = 0, height = 0;
+	glfwGetFramebufferSize(m_Window, &width, &height);
+	while (width == 0 || height == 0)
+	{
+		glfwGetFramebufferSize(m_Window, &width, &height);
+		glfwWaitEvents();
+	}
+
+	vkDeviceWaitIdle(m_Device);
+
+	cleanupSwapChain();
+
+	createSwapChain();
+	createImageViews();
+	createRenderPass();
+	createGraphicPipeline();
+	createFramebuffers();
+	createCommandBuffers();
+}
+
 VkShaderModule TriangleApp::createShaderModule(const std::vector<char>& code)
 {
 	VkShaderModuleCreateInfo createInfo{};
@@ -917,6 +972,12 @@ VkExtent2D TriangleApp::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabil
 
 		return actualExtent;
 	}
+}
+
+void TriangleApp::framebufferResizeCallback(GLFWwindow* window, int width, int height)
+{
+	auto app = reinterpret_cast<TriangleApp*>(glfwGetWindowUserPointer(window));
+	app->m_FramebufferResized = true;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)

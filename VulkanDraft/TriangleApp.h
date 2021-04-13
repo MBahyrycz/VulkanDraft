@@ -76,11 +76,16 @@ private:
 	void createCommandPool();
 	void createCommandBuffers();
 	void createSyncObjects();
+
+	void recreateSwapChain();
+	void cleanupSwapChain();
 	
 	VkShaderModule createShaderModule(const std::vector<char>& code);
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+
+	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 private:
@@ -108,4 +113,6 @@ private:
 	std::vector<VkFence> m_InFlightFences;
 	std::vector<VkFence> m_ImagesInFlight;
 	size_t m_CurrentFrame = 0;
+public:
+	bool m_FramebufferResized = false;
 };
