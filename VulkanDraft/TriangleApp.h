@@ -12,6 +12,8 @@
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
+const int MAX_FRAMES_IN_FLIGHT = 2;
+
 const std::vector<const char*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"
 };
@@ -73,7 +75,7 @@ private:
 	void createFramebuffers();
 	void createCommandPool();
 	void createCommandBuffers();
-	void createSemaphores();
+	void createSyncObjects();
 	
 	VkShaderModule createShaderModule(const std::vector<char>& code);
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -101,6 +103,9 @@ private:
 	std::vector<VkFramebuffer> m_SwapChainFramebuffers;
 	VkCommandPool m_CommandPool;
 	std::vector<VkCommandBuffer> m_CommandBuffers;
-	VkSemaphore m_ImageAvailableSemaphore;
-	VkSemaphore m_RendererFinishedSemaphore;
+	std::vector<VkSemaphore> m_ImageAvailableSemaphores;
+	std::vector<VkSemaphore> m_RendererFinishedSemaphores;
+	std::vector<VkFence> m_InFlightFences;
+	std::vector<VkFence> m_ImagesInFlight;
+	size_t m_CurrentFrame = 0;
 };
