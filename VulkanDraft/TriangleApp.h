@@ -65,9 +65,14 @@ struct Vertex
 };
 
 const std::vector<Vertex> vertices = {
-	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+};
+
+const std::vector<uint32_t> indices = {
+	0, 1, 2, 2, 3, 0
 };
 
 struct QueueFamilyIndices 
@@ -118,8 +123,13 @@ private:
 	void createCommandPool();
 	void createCommandBuffers();
 	void createSyncObjects();
+
 	void createVertexBuffer();
+	void createIndexBuffer();
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+
+	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 	void recreateSwapChain();
 	void cleanupSwapChain();
@@ -138,7 +148,7 @@ private:
 	VkDebugUtilsMessengerEXT m_DebugMessenger;
 	VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
 	VkDevice m_Device;
-	VkQueue m_GraphicQueue;
+	VkQueue m_GraphicsQueue;
 	VkQueue m_PresentQueue;
 	VkSurfaceKHR m_Surface;
 	VkSwapchainKHR m_SwapChain;
@@ -157,8 +167,11 @@ private:
 	std::vector<VkFence> m_InFlightFences;
 	std::vector<VkFence> m_ImagesInFlight;
 	size_t m_CurrentFrame = 0;
+
 	VkBuffer m_VertexBuffer;
 	VkDeviceMemory m_VertexBufferMemory;
+	VkBuffer m_IndexBuffer;
+	VkDeviceMemory m_IndexBufferMemory;
 public:
 	bool m_FramebufferResized = false;
 };
