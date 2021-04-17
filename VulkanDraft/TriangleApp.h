@@ -6,6 +6,9 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#include <glm/gtc/matrix_transform.hpp>
 #include <glm/glm.hpp>
 
 #include <vector>
@@ -75,6 +78,13 @@ const std::vector<uint32_t> indices = {
 	0, 1, 2, 2, 3, 0
 };
 
+struct UniformBufferObject
+{
+	alignas(16) glm::mat4 model;
+	alignas(16) glm::mat4 view;
+	alignas(16) glm::mat4 proj;
+};
+
 struct QueueFamilyIndices 
 {
 	std::optional<uint32_t> graphicsFamily;
@@ -126,10 +136,18 @@ private:
 
 	void createVertexBuffer();
 	void createIndexBuffer();
+	void createUniformBuffers();
+
+	void updateUniformBuffer(uint32_t currentImage);
+
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
+	void createDescriptorSetLayout();
+	void createDescriptorPool();
+	void createDescriptorSets();
 
 	void recreateSwapChain();
 	void cleanupSwapChain();
@@ -157,6 +175,7 @@ private:
 	VkFormat m_SwapChainImageFormat;
 	VkExtent2D m_SwapChainExtent;
 	VkRenderPass m_RenderPass;
+	VkDescriptorSetLayout m_DescriptorSetLayout;
 	VkPipelineLayout m_PipelineLayout;
 	VkPipeline m_GraphicsPipeline;
 	std::vector<VkFramebuffer> m_SwapChainFramebuffers;
@@ -172,6 +191,11 @@ private:
 	VkDeviceMemory m_VertexBufferMemory;
 	VkBuffer m_IndexBuffer;
 	VkDeviceMemory m_IndexBufferMemory;
+	std::vector<VkBuffer> m_UniformBuffers;
+	std::vector<VkDeviceMemory> m_UniformBuffersMemory;
+
+	VkDescriptorPool m_DescriptorPool;
+	std::vector<VkDescriptorSet> m_DescriptorSets;
 public:
 	bool m_FramebufferResized = false;
 };
