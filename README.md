@@ -6,7 +6,7 @@ Engine project can be found in here: [BIGOS](https://github.com/MBahyrycz/BIGOS)
 Instal Vulkan SDK in default directory: C:\VulkanSDK. 
 Probably you will need to change version in Visual Studio Solution project properties (this drafi is using 1.2.162.1 version).
 
-## Fresh demo
+## Fresh demos
 <p>Hello triangle</p>
 <p align="center">
   <img src="https://github.com/MBahyrycz/VulkanDraft/blob/main/Demos/HelloTriangle.png" />
@@ -15,4 +15,9 @@ Probably you will need to change version in Visual Studio Solution project prope
 <p>Hello texture</p>
 <p align="center">
   <img src="https://github.com/MBahyrycz/VulkanDraft/blob/main/Demos/HelloTexture.png" />
+</p>
+
+<p>Hello model</p>
+<p align="center">
+  <img src="https://github.com/MBahyrycz/VulkanDraft/blob/main/Demos/HelloModel.png" />
 </p>
